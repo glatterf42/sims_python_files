@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 def V(r):
     return 4 * np.pi * r**3 / 3
 
-directory = Path(r"/home/ben/sims/swiftsim/examples/zoom_tests/")
+directory = Path(r"/home/ben/sims/swiftsim/examples/zoom_tests/auriga6_halo_arj")
 
-snap_number = 7
+snap_number = 0 # 7 for our tests
 
 fof_file = h5py.File(directory / f"fof_output_000{snap_number}.hdf5", "r") 
 file = h5py.File(directory / f'output_000{snap_number}.hdf5', 'r')
@@ -49,7 +49,8 @@ number_of_members = groups['Sizes'][:]
 table_width = 4
 
 separate_unique_counter = 0
-for i in range(len(groupids)-1):
+# for i in range(len(groupids)-1):
+for i in range(11):
     if np.isin(groupids[i], unique_groups):
         highres_members = particle_count[separate_unique_counter]
         contamination = (1 - highres_members / number_of_members[i]) 
@@ -96,13 +97,16 @@ Lbox = 100
 softening = Lbox / Nres / 30
 plt.axvline(4 * softening / group_radius, linestyle='--', color='grey')
 
-plt.title('Density profile Auriga 6')
+plt.title('Density profile Auriga 6 ARJ')
 plt.xlabel(r'R / $\mathrm{R}_\mathrm{group}$')
 plt.ylabel(r'ρ [$10^{10}\ \mathrm{M}_\odot\ /\ \mathrm{Mpc}^3$]')
 
 plt.loglog(plot_log_radial_bins, masses_in_radial_bins)
 plt.show()
 
+
+# kumulatives Dichteprofil -> sollte bei grossen Massen praktisch gleich sein, am besten direkt uebereinander plotten. 
+# plt.hist2D mit x und y, jeweils Zentrum der Gruppe +- 0.5 Mpc anschauen, alles andere wegwerfen, sollte direkt Struktur erkennen koennen, ob sie gleich ist.
 
 
 
