@@ -31,7 +31,7 @@ def downscale_IDs(particle_ID: int, Nres_max: int, Nres_min: int):
 
 
 if __name__ == "__main__":
-    test_particle = np.array([0, 0, 127])
+    test_particle = np.array([1, 1, 0])
     # maximum_test = np.array([127, 127, 127]) #this works, Nres - 1 is the maximum for (i,j,k)
 
     Nres_1 = 128
