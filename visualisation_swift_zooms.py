@@ -52,14 +52,14 @@ for filename in sorted(directory.glob("output_0004.hdf5")):
     file = h5py.File(str(filename), "r")
     Header = file['Header']
 
-    highres_coordinates = file["PartType1"]["Coordinates"][:]  # for cdm particles
+    highres_coordinates = file["PartType1"]["Coordinates"][:]  # for highres particles
     highres_names = file["PartType1"]["ParticleIDs"][:]
     highres_velocities = file["PartType1"]["Velocities"][:]
     highres_masses = file['PartType1']['Masses'][:]
     highres_group_ids = file['PartType1']['FOFGroupIDs'][:]
     highres_absolute_velo = np.sqrt(np.sum(highres_velocities ** 2, axis=1))
 
-    lowres_coordinates = file["PartType2"]["Coordinates"][:]  # for cdm particles
+    lowres_coordinates = file["PartType2"]["Coordinates"][:]  # for lowres particles
     lowres_names = file["PartType2"]["ParticleIDs"][:]
     lowres_velocities = file["PartType2"]["Velocities"][:]
     lowres_masses = file['PartType2']['Masses'][:]

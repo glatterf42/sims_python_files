@@ -27,7 +27,7 @@ def determine_desired_range(offset, minimum, upper_limit_bottom, lower_limit_top
 
 
 @numba.njit()
-def find_coordinates_to_move(minimum, maximum, ratio, x_offset, y_offset, z_offset, move_candidates):
+def find_coordinates_to_move(minimum, maximum, x_offset, y_offset, z_offset, move_candidates):
     coordinates_to_move = []
     x_start, x_end = determine_desired_range(x_offset, minimum, upper_limit_bottom, lower_limit_top, maximum)
     y_start, y_end = determine_desired_range(y_offset, minimum, upper_limit_bottom, lower_limit_top, maximum)
@@ -41,47 +41,20 @@ def find_coordinates_to_move(minimum, maximum, ratio, x_offset, y_offset, z_offs
     return coordinates_to_move
 
 
-# directory = Path(r"/home/ben/sims/swiftsim/examples/zoom_tests/auriga6_halo7_8_10/")
-directory = Path(r"/home/ben/sims/data_swift/monofonic_tests/DB2_128_100/")
+directory = Path(r"/home/ben/sims/data_swift/monofonic_tests/shannon_256_100/")
 
-# file = h5py.File(directory / "auriga6_halo7_8_9.hdf5", "r") 
-
-# for filename in sorted(directory.glob("output_*.hdf5")):
 for filename in sorted(directory.glob("output_0004.hdf5")):
     print(filename)
     file = h5py.File(str(filename), "r")
     Header = file['Header']
 
-    highres_coordinates = file["PartType1"]["Coordinates"][:]  # for cdm particles
-    highres_names = file["PartType1"]["ParticleIDs"][:]
-    highres_velocities = file["PartType1"]["Velocities"][:]
-    highres_masses = file['PartType1']['Masses'][:]
-    highres_group_ids = file['PartType1']['FOFGroupIDs'][:]
-    highres_absolute_velo = np.sqrt(np.sum(highres_velocities ** 2, axis=1))
+    original_coordinates = file["PartType1"]["Coordinates"][:]  # for cdm particles
+    names = file["PartType1"]["ParticleIDs"][:]
+    velocities = file["PartType1"]["Velocities"][:]
+    masses = file['PartType1']['Masses'][:]
+    group_ids = file['PartType1']['FOFGroupIDs'][:]
+    absolute_velo = np.sqrt(np.sum(velocities ** 2, axis=1))
 
-    lowres_coordinates = file["PartType2"]["Coordinates"][:]  # for cdm particles
-    lowres_names = file["PartType2"]["ParticleIDs"][:]
-    lowres_velocities = file["PartType2"]["Velocities"][:]
-    lowres_masses = file['PartType2']['Masses'][:]
-    lowres_group_ids = file['PartType2']['FOFGroupIDs'][:]
-    lowres_absolute_velo = np.sqrt(np.sum(lowres_velocities ** 2, axis=1))
-
-    original_coordinates = np.concatenate((highres_coordinates, lowres_coordinates))
-    # if "auriga" in str(filename):
-    #     original_coordinates /= 1000
-    # print(original_coordinates.mean())
-    # print(original_coordinates.min())
-    # print(original_coordinates.max())
-    # print(file['Header'])
-    # print(list(file['Units'].attrs.items()))
-    # exit()
-    names = np.concatenate((highres_names, lowres_names))
-    velocities = np.concatenate((highres_velocities, lowres_velocities))
-    masses = np.concatenate((highres_masses, lowres_masses))
-    group_ids = np.concatenate((highres_group_ids, lowres_group_ids))
-    absolute_velo = np.concatenate((highres_absolute_velo, lowres_absolute_velo))
-    # for bla in [original_coordinates, names, velocities, masses, absolute_velo]:
-    #     print(bla.shape)
     original_data = np.vstack([
         original_coordinates[::, 0],
         original_coordinates[::, 1],
@@ -98,7 +71,7 @@ for filename in sorted(directory.glob("output_0004.hdf5")):
     assert (original_coordinates == original_data[::, 0:3]).all()
 
     boundaries = Header.attrs['BoxSize']  # BoxLength for e5 boxes depends on Nres, 2.36438 for 256, 4.72876 for 512.
-    print(boundaries, len(highres_names))
+    print(boundaries, len(names))
     if not boundaries.shape:
         boundaries = np.array([boundaries] * 3)
     offsets = [-1, 0, 1]
@@ -108,9 +81,9 @@ for filename in sorted(directory.glob("output_0004.hdf5")):
     # assumes cube form and 0.1 as desired ratio to move
     minimum = 0.0
     maximum = max(boundaries)
-    ratio = 0.1
     box_length = maximum - minimum
-    range_to_move = 0.1 * box_length
+    # magic number: mean particle separation * 15 in units of box_length
+    range_to_move = 0.0586 * box_length  # mean particle separation: 0.78125 Mpc for 128, 0.390625 Mpc for 256, etc
     upper_limit_bottom = minimum + range_to_move
     lower_limit_top = maximum - range_to_move
 
@@ -145,10 +118,10 @@ for filename in sorted(directory.glob("output_0004.hdf5")):
             for z in offsets:
                 if (x, y, z) == (0, 0, 0):
                     continue
-                moved_coordinates = find_coordinates_to_move(minimum, maximum, ratio, x, y, z, move_candidates)
+                moved_coordinates = find_coordinates_to_move(minimum, maximum, x, y, z, move_candidates)
                 # print(moved_coordinates)
                 moved_coordinates = np.array(moved_coordinates)
-                # if not moved_coordinates:
+                # if not moved_coordinates.all():
                 #     print(f"nothing moved in {(x,y,z)}")
                 #     continue
                 moved_coordinates[::, 0] += x * boundaries[0]
@@ -211,7 +184,7 @@ for filename in sorted(directory.glob("output_0004.hdf5")):
     # all_data = all_data[sorted_index, :]
 
     #    np.savetxt("out_"+filename.with_suffix(".csv").name, all_data[indices], delimiter=",", fmt="%.3f", header="x,y,z,vx,vy,vz,v,name") #if indices are needed
-    np.savetxt(directory / f"out_{filename.with_suffix('.csv').name}",
+    np.savetxt(directory / f"visualisation_{filename.with_suffix('.csv').name}",
                export_data,
                delimiter=",",
                fmt="%.3f",
