@@ -27,7 +27,8 @@ def determine_desired_range(offset, minimum, upper_limit_bottom, lower_limit_top
 
 
 @numba.njit()
-def find_coordinates_to_move(minimum, maximum, ratio, x_offset, y_offset, z_offset, move_candidates):
+def find_coordinates_to_move(minimum, maximum, lower_limit_top, upper_limit_bottom, x_offset, y_offset, z_offset,
+                             move_candidates):
     coordinates_to_move = []
     x_start, x_end = determine_desired_range(x_offset, minimum, upper_limit_bottom, lower_limit_top, maximum)
     y_start, y_end = determine_desired_range(y_offset, minimum, upper_limit_bottom, lower_limit_top, maximum)
@@ -41,14 +42,27 @@ def find_coordinates_to_move(minimum, maximum, ratio, x_offset, y_offset, z_offs
     return coordinates_to_move
 
 
-# directory = Path(r"/home/ben/sims/swiftsim/examples/zoom_tests/auriga6_halo7_8_10/")
-directory = Path(r"/home/ben/sims/data_swift/monofonic_tests/DB2_128_100/")
+@numba.njit()
+def find_move_candidates(original_data, minimum, maximum, lower_limit_top, upper_limit_bottom):
+    move_candidates = []
+    print("finding move candidates")
+    for particle in original_data:
+        point = particle[0:3]
+        if (
+                minimum <= point[0] <= upper_limit_bottom or
+                lower_limit_top <= point[0] <= maximum or
+                minimum <= point[1] <= upper_limit_bottom or
+                lower_limit_top <= point[1] <= maximum or
+                minimum <= point[2] <= upper_limit_bottom or
+                lower_limit_top <= point[2] <= maximum
+        ):
+            move_candidates.append(particle)
+            # print(point)
+    return move_candidates
 
 # file = h5py.File(directory / "auriga6_halo7_8_9.hdf5", "r") 
 
-# for filename in sorted(directory.glob("output_*.hdf5")):
-for filename in sorted(directory.glob("output_0004.hdf5")):
-    print(filename)
+def read_file(filename):
     file = h5py.File(str(filename), "r")
     Header = file['Header']
 
