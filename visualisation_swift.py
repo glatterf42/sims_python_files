@@ -41,11 +41,10 @@ def find_coordinates_to_move(minimum, maximum, ratio, x_offset, y_offset, z_offs
     return coordinates_to_move
 
 
-directory = Path(r"/home/ben/sims/swiftsim/examples/zoom_tests/auriga6_halo7_8_10/")
+# file = h5py.File(directory / "auriga6_halo7_8_9.hdf5", "r")
 
-# file = h5py.File(directory / "auriga6_halo7_8_9.hdf5", "r") 
-
-for filename in sorted(directory.glob("output_*.hdf5")):
+for filename in sys.argv[1:]:
+    filename = Path(filename)
     print(filename)
     file = h5py.File(str(filename), "r")
     Header = file['Header']
@@ -57,14 +56,28 @@ for filename in sorted(directory.glob("output_*.hdf5")):
     highres_group_ids = file['PartType1']['FOFGroupIDs'][:]
     highres_absolute_velo = np.sqrt(np.sum(highres_velocities ** 2, axis=1))
 
-    lowres_coordinates = file["PartType2"]["Coordinates"][:]  # for cdm particles
-    lowres_names = file["PartType2"]["ParticleIDs"][:]
-    lowres_velocities = file["PartType2"]["Velocities"][:]
-    lowres_masses = file['PartType2']['Masses'][:]
-    lowres_group_ids = file['PartType2']['FOFGroupIDs'][:]
-    lowres_absolute_velo = np.sqrt(np.sum(lowres_velocities ** 2, axis=1))
+    if "PartType2" in file:
+        lowres_coordinates = file["PartType2"]["Coordinates"][:]  # for cdm particles
+        lowres_names = file["PartType2"]["ParticleIDs"][:]
+        lowres_velocities = file["PartType2"]["Velocities"][:]
+        lowres_masses = file['PartType2']['Masses'][:]
+        lowres_group_ids = file['PartType2']['FOFGroupIDs'][:]
+        lowres_absolute_velo = np.sqrt(np.sum(lowres_velocities ** 2, axis=1))
 
-    original_coordinates = np.concatenate((highres_coordinates, lowres_coordinates))
+        original_coordinates = np.concatenate((highres_coordinates, lowres_coordinates))
+        names = np.concatenate((highres_names, lowres_names))
+        velocities = np.concatenate((highres_velocities, lowres_velocities))
+        masses = np.concatenate((highres_masses, lowres_masses))
+        group_ids = np.concatenate((highres_group_ids, lowres_group_ids))
+        absolute_velo = np.concatenate((highres_absolute_velo, lowres_absolute_velo))
+    else:
+        original_coordinates = highres_coordinates
+        names = highres_names
+        velocities = highres_velocities
+        masses = highres_masses
+        group_ids = highres_group_ids
+        absolute_velo = highres_absolute_velo
+
     # if "auriga" in str(filename):
     #     original_coordinates /= 1000
     # print(original_coordinates.mean())
@@ -73,13 +86,9 @@ for filename in sorted(directory.glob("output_*.hdf5")):
     # print(file['Header'])
     # print(list(file['Units'].attrs.items()))
     # exit()
-    names = np.concatenate((highres_names, lowres_names))
-    velocities = np.concatenate((highres_velocities, lowres_velocities))
-    masses = np.concatenate((highres_masses, lowres_masses))
-    group_ids = np.concatenate((highres_group_ids, lowres_group_ids))
-    absolute_velo = np.concatenate((highres_absolute_velo, lowres_absolute_velo))
     # for bla in [original_coordinates, names, velocities, masses, absolute_velo]:
     #     print(bla.shape)
+    print(original_coordinates.shape)
     original_data = np.vstack([
         original_coordinates[::, 0],
         original_coordinates[::, 1],
@@ -209,7 +218,7 @@ for filename in sorted(directory.glob("output_*.hdf5")):
     # all_data = all_data[sorted_index, :]
 
     #    np.savetxt("out_"+filename.with_suffix(".csv").name, all_data[indices], delimiter=",", fmt="%.3f", header="x,y,z,vx,vy,vz,v,name") #if indices are needed
-    np.savetxt(directory / f"out_{filename.with_suffix('.csv').name}",
+    np.savetxt(f"out_{filename.with_suffix('.csv').name}",
                export_data,
                delimiter=",",
                fmt="%.3f",
