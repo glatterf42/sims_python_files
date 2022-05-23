@@ -27,7 +27,8 @@ def determine_desired_range(offset, minimum, upper_limit_bottom, lower_limit_top
 
 
 @numba.njit()
-def find_coordinates_to_move(minimum, maximum, ratio, x_offset, y_offset, z_offset, move_candidates):
+def find_coordinates_to_move(minimum, maximum, lower_limit_top, upper_limit_bottom, x_offset, y_offset, z_offset,
+                             move_candidates):
     coordinates_to_move = []
     x_start, x_end = determine_desired_range(x_offset, minimum, upper_limit_bottom, lower_limit_top, maximum)
     y_start, y_end = determine_desired_range(y_offset, minimum, upper_limit_bottom, lower_limit_top, maximum)
@@ -138,7 +139,6 @@ def main():
         # assumes cube form and 0.1 as desired ratio to move
         minimum = 0.0
         maximum = max(boundaries)
-        ratio = 0.1
         box_length = maximum - minimum
         range_to_move = 0.1 * box_length
         upper_limit_bottom = minimum + range_to_move
@@ -155,7 +155,10 @@ def main():
                 for z in offsets:
                     if (x, y, z) == (0, 0, 0):
                         continue
-                    moved_coordinates = find_coordinates_to_move(minimum, maximum, ratio, x, y, z, move_candidates)
+                    moved_coordinates = find_coordinates_to_move(
+                        minimum, maximum, lower_limit_top, upper_limit_bottom,
+                        x, y, z, move_candidates
+                    )
                     # print(moved_coordinates)
                     moved_coordinates = np.array(moved_coordinates)
                     # if not moved_coordinates:
