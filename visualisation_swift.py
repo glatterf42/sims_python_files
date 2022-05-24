@@ -180,13 +180,14 @@ def main():
         print("...done.")
         print("Searching neighbours...")
         a = time.perf_counter_ns()
+        # TODO: this section could be optimized by seperating coordinates into batches that are calculated after each other
         distances, indices = tree.query([coordinates], k=num_nearest_neighbors, workers=6)
-        # shape of closest_neighbours: (1, xxxx, 40)
+        # shape of distances/indices: (1, xxxx, num_nearest_neighbors)
         b = time.perf_counter_ns()
         print("...found neighbours.")
         print(f"took {(b - a) / 1000 / 1000:.2f} ms")
-        distances = distances[0]  # to (xxxx, 40)
-        indices = indices[0]  # to (xxxx, 40)
+        distances = distances[0]  # to (xxxx, num_nearest_neighbors)
+        indices = indices[0]  # to (xxxx, num_nearest_neighbors)
         print(distances.shape)
         print(indices.shape)
         print(indices)
@@ -210,6 +211,7 @@ def main():
 
         # print(densities)
         # print(densities.shape)
+        print("aggregating data")
         all_data = np.column_stack([list(range(densities.shape[0])), transformed_data, densities, alt_densities])
         # print(all_data.shape)
         # print(original_data.shape[0])
@@ -222,6 +224,7 @@ def main():
         # all_data = all_data[sorted_index, :]
 
         #    np.savetxt("out_"+filename.with_suffix(".csv").name, all_data[indices], delimiter=",", fmt="%.3f", header="x,y,z,vx,vy,vz,v,name") #if indices are needed
+        print("saving csv")
         np.savetxt(f"out_{filename.with_suffix('.csv').name}",
                    export_data,
                    delimiter=",",
